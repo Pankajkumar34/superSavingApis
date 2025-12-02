@@ -1,9 +1,9 @@
 
-exports.successResponse = (res, message = 'Success', data = {}, status = 200) => {
+exports.successResponse = (res, message = 'Success', body = {}, status = 200) => {
   return res.status(status).json({
     success: true,
     message,
-    data,
+    body,
   });
 };
 
@@ -15,6 +15,13 @@ exports.errorResponse = (res, message = 'Internal Server Error', status = 500, e
   });
 };
 
+
+exports.failedErrorResponse = (res, message = 'Validation failed', status = 40) => {
+  return res.status(status).json({
+    success: false,
+    message,
+  });
+};
 exports.validationError = (res, message = 'Validation failed', errors = [], status = 400) => {
   return res.status(status).json({
     success: false,

@@ -3,17 +3,39 @@ const models = require('../models/index');
 const bcrypt = require("bcrypt")
 exports.verifyToken = async (req, res, next) => {
   try {
-    const token = req.headers.authorization?.split(' ')[1]; 
-    if (!token) return res.status(401).json({ message: 'Access denied. No token provided.' });
+    const authHeader = req.cookies.accessToken;
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded; 
-    next();
-  } catch (err) {
-    res.status(401).json({ message: 'Invalid or expired token.' });
+    if (!authHeader) {
+      return res.status(401).json({ message: "Access denied. No token provided." });
+    }
+
+    const token = authHeader
+  
+    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+      if (err) {
+
+        // Token EXPIRED
+        
+        if (err.name === "TokenExpiredError") {
+          return res.status(401).json({
+            message: "Access token expired, please login again.",
+            isExpired: true
+          });
+        }
+        return res.status(401).json({
+          message: "Invalid token."
+        });
+      }
+
+      req.user = decoded;
+      next();
+    });
+
+  } catch (error) {
+    console.log("Auth error:", error);
+    return res.status(500).json({ message: "Server error." });
   }
 };
-
 exports.verifyRole = (allowedRoles) => {
   return async (req, res, next) => {
     try {
@@ -52,3 +74,4 @@ exports.compareHash = async (existPass,newPass) => {
     throw error;
   }
 };
+

@@ -188,7 +188,7 @@ module.exports = {
                 state: address.state,
                 region: address.region
             };
-            if(isTerm) user.isTerm=isTerm
+            if (isTerm) user.isTerm = isTerm
             user.isProfileCompleted = true;
 
             await user.save();
@@ -361,6 +361,40 @@ module.exports = {
         } catch (error) {
             return errorResponse(res, error.message, 500, error)
         }
+    },
+    logout: async (req, res) => {
+        try {
+            const refreshToken = req.cookies.refreshToken;
+            console.log("==>", refreshToken)
+            if (!refreshToken)
+                return successResponse(res, "Already logged out", {});
+
+            // remove token from DB
+            await models.userModel.updateOne(
+                { "refreshTokens.token": refreshToken },
+                { $pull: { refreshTokens: { token: refreshToken } } }
+            );
+
+            // clear cookies
+            res.clearCookie("refreshToken", {
+                httpOnly: false,
+                secure: true,
+                sameSite: "strict",
+            });
+
+            res.clearCookie("accessToken", {
+                httpOnly: false,
+                secure: true,
+                sameSite: "strict",
+            });
+
+            return successResponse(res, "Logged out successfully", {});
+
+        } catch (error) {
+            console.log(error, "error=>")
+            return res.status(500).json({ message: "Logout failed", error });
+        }
     }
+
 
 }

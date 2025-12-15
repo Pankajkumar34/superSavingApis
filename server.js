@@ -58,7 +58,8 @@ const uploadedFiles = []
      uploadedFiles.push({
       fieldname,
       fileName: safeFilename,
-      path: savedPath
+      path: savedPath,
+      url: `http://localhost:4000/${destCode[destination]}/${safeFilename}`
     })
   })
 

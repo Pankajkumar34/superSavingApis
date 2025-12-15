@@ -1,6 +1,9 @@
 const models = require("../../models/index")
 const jwt = require("jsonwebtoken");
+const mongoose = require("mongoose");
+const aggregatePipeline = require("../../aggregationPipeline/authAggregate")
 const { successResponse, errorResponse, validationError, failedErrorResponse } = require('../../helpers/response.helper');
+const { generateAccountNumber } = require("../../utils/accountNumberGenerate");
 
 function generateOTP(length = 6) {
     let otp = "";
@@ -152,9 +155,10 @@ module.exports = {
                 email,
                 lastName,
                 phoneNumber,
-                profilePic,
+                profileImage,
                 address,
-                isTerm
+                isTerm,
+                authSteps
             } = req.body;
             const user = await models.userModel.findOne({ _id: userId });
             if (!user) {
@@ -178,7 +182,7 @@ module.exports = {
             if (deviceType) user.deviceType = deviceType;
             if (deviceToken) user.deviceToken = deviceToken;
 
-            if (profilePic) user.profilePic = profilePic
+            if (profileImage) user.profileImage = profileImage
             if (address) user.address = {
                 villageCity: address.villageCity,
                 postOffice: address.postOffice,
@@ -189,7 +193,8 @@ module.exports = {
                 region: address.region
             };
             if (isTerm) user.isTerm = isTerm
-            user.isProfileCompleted = true;
+            if (authSteps) user.authSteps = authSteps
+            if (authSteps === 4) user.isProfileCompleted = true;
 
             await user.save();
 
@@ -251,8 +256,26 @@ module.exports = {
             if (isExistinNumber.otp !== otp) {
                 return failedErrorResponse(res, "Invalid OTP", 400);
             }
+            if (!isExistinNumber.accountNumber || isExistinNumber.accountNumber === "") {
+                const accountNumber = generateAccountNumber();
+                await models.userModel.updateOne({ _id: isExistinNumber._id }, { accountNumber: accountNumber })
 
-            await models.userModel.updateOne({ _id: isExistinNumber._id }, { isOtpVerified: true })
+            }
+            await models.userModel.updateOne({ _id: isExistinNumber._id }, { isOtpVerified: true, authSteps: 1 })
+
+            let wallet = await models.wallet.findOne({ userId: isExistinNumber._id });
+
+            if (!wallet) {
+                wallet = await models.wallet.create({
+                    userId: isExistinNumber._id,
+                    balance: 0
+                });
+
+                await models.userModel.updateOne(
+                    { _id: isExistinNumber._id },
+                    { walletId: wallet._id }
+                );
+            }
 
             const userData = await models.userModel.findOne({ phoneNumber: phoneNumber });
 
@@ -348,7 +371,9 @@ module.exports = {
             }
 
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            const user = await models.userModel.findById(decoded.userId).select("-password");
+            const user = await models.userModel.findById(decoded.userId).select(
+                "-password -refreshTokens -otp -otpExpiry -authToken -sessionExpire -__v -walletId -deviceToken"
+            );
 
             if (!user) {
                 return failedErrorResponse(res, "Invaild User", 401);
@@ -360,6 +385,21 @@ module.exports = {
             });
         } catch (error) {
             return errorResponse(res, error.message, 500, error)
+        }
+    },
+
+    getUserProfile: async (req, res) => {
+        try {
+            const userId = req.user.userId;
+            const user = await models.userModel.aggregate(aggregatePipeline.getProfilePipeline(userId));
+
+            if (!user) {
+                return failedErrorResponse(res, "User not found", 404);
+            }
+
+            return successResponse(res, "User profile fetched successfully", user[0]);
+        } catch (error) {
+            return errorResponse(res, "Server error", 500, error);
         }
     },
     logout: async (req, res) => {

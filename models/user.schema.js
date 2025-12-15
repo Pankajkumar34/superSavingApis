@@ -16,7 +16,11 @@ const userSchema = new Schema(
     authSteps: {
       type: Number,
       default: 0,
-      enum: [0, 1, 2, 3, 4], // 0: OTP verified, 1: personal details, 2: address, 3: profile complete
+      enum: [0, 1, 2, 3, 4], // 1: OTP verified, 2: personal details, 3: address, 4: profile complete
+    },
+    walletId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Wallet"
     },
     firstName: { type: String, default: "" },
     lastName: { type: String, default: "" },
@@ -36,6 +40,11 @@ const userSchema = new Schema(
       enum: ["otp", "google", "facebook", "email-password"],
       default: "otp",
     },
+    accountNumber: {
+      type: String,
+      unique: true
+    },
+
     socialLoginId: { type: String, default: null },
     phoneNumber: { type: String, required: true },
     countryCode: { type: String, default: "+91" },
@@ -43,7 +52,7 @@ const userSchema = new Schema(
     isEmailVerified: { type: Boolean, default: false },
     otp: { type: String, select: false },
     otpExpiry: { type: Date, select: false },
-    profilePic: { type: String, default: "" },
+    profileImage: { type: String, default: "" },
     isTerm: {
       type: Boolean,
       default: false

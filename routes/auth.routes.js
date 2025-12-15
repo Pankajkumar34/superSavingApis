@@ -55,6 +55,7 @@ router.post('/verify-otp',authController.verifyOtp);
 router.post('/complete-profile/:userId',verifyToken, authController.completeProfile);
 router.post("/refresh-token", authController.refreshToken);
 router.get("/me",verifyToken, authController.me);
+router.get("/profile",verifyToken, authController.getUserProfile);
 router.post("/logout",verifyToken,authController.logout)
 
 module.exports = router;

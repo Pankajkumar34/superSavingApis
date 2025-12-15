@@ -1,4 +1,6 @@
 
 module.exports={
-    userModel:require("./user.schema")
+    userModel:require("./user.schema"),
+    wallet:require("./wallet.schema"),
+    walletTransaction:require("./walletTransaction.schema")
 }

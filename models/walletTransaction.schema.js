@@ -38,4 +38,4 @@ const walletTransactionSchema = new mongoose.Schema({
   balanceAfter: Number
 }, { timestamps: true });
 
-module.exports= mongoose.model("WalletTransaction", walletTransactionSchema);
+module.exports= mongoose.model("walletTransaction", walletTransactionSchema);

@@ -30,9 +30,14 @@ const userSchema = new Schema(
       default: "",
     },
     role: {
-      type: Number,
-      enum: [0, 1, 2, 3, 4], // 0=user, 1=superAdmin, 2=subAdmin, 3=franchise, 4=warehouseAdmin
-      default: 0,
+      type: String,
+      enum: [
+        "USER",
+        "SUPER_ADMIN",
+        "FRANCHISE_ADMIN",
+        "WAREHOUSE_ADMIN"
+      ],
+      default: "USER"
     },
     password: { type: String, select: false },
     socialLoginType: {
@@ -81,6 +86,11 @@ const userSchema = new Schema(
         default: [0, 0],
       },
     },
+    status: {
+      type: String,
+      enum: ["ACTIVE", "BLOCKED"],
+      default: "ACTIVE"
+    },
     deviceType: {
       type: String,
       enum: ["android", "ios", "web"],
@@ -89,7 +99,6 @@ const userSchema = new Schema(
     deviceToken: { type: String, default: "" },
     isProfileCompleted: { type: Boolean, default: false },
 
-    // Multi-device refresh tokens
     refreshTokens: [refreshTokenSchema],
 
     loginTime: { type: Date },
@@ -121,4 +130,4 @@ userSchema.methods.toJSON = function () {
   return obj;
 };
 
-module.exports = mongoose.model("User", userSchema);
+module.exports = mongoose.model("user", userSchema);

@@ -83,13 +83,18 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use('/api/auth', require('./routes/auth.routes'));
-app.use('/api/super-admin', require('./routes/superAdmin.routes'));
-app.use('/api/franchise', require('./routes/franchise.routes'));
-app.use('/api/sub-admin', require('./routes/subAdmin.routes'));
-app.use('/api/warehouse', require('./routes/warehouse.routes'));
+app.use('/api/dashboard', require('./routes/dashboardRoutes/dashboardAuth.routes'));
+app.use('/api/super-admin', require('./routes/dashboardRoutes/superAdmin.routes'));
+app.use('/api/franchise', require('./routes/dashboardRoutes/franchise.routes'));
+app.use('/api/sub-admin', require('./routes/dashboardRoutes/subAdmin.routes'));
+app.use('/api/warehouse', require('./routes/dashboardRoutes/warehouse.routes'));
 
 app.use((req, res) => {
-  res.status(404).json({ message: 'Not Found' });
+  try {
+  return  res.status(404).json({ message: 'Not Found' });
+  } catch (error) {
+    return res.status(500).json({ message: error.message || 'Internal Server Error' });
+  }
 });
 
 DBConnect()

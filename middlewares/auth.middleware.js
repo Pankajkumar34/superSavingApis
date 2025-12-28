@@ -39,7 +39,7 @@ exports.verifyToken = async (req, res, next) => {
 exports.verifyRole = (allowedRoles) => {
   return async (req, res, next) => {
     try {
-      const user = await models.userModel.findById(req.user.id);
+      const user = await models.userModel.findById(req.user.userId);
       if (!user) return res.status(404).json({ message: 'User not found' });
 
       if (!allowedRoles.includes(user.role)) {

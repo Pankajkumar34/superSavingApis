@@ -14,13 +14,13 @@ const subCategorySchema = new mongoose.Schema(
       lowercase: true
     },
 
-    category: {
+    categoryId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Category",
       required: true
     },
 
-    brand: {
+    brandId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Brand"
     },

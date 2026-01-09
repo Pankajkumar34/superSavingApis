@@ -15,7 +15,7 @@ const categorySchema = new mongoose.Schema(
       unique: true
     },
 
-    brand: {
+    brandId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Brand"
     },

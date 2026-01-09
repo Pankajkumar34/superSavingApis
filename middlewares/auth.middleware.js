@@ -41,7 +41,6 @@ exports.verifyRole = (allowedRoles) => {
     try {
       const user = await models.userModel.findById(req.user.userId);
       if (!user) return res.status(404).json({ message: 'User not found' });
-
       if (!allowedRoles.includes(user.role)) {
         return res.status(403).json({ message: 'Forbidden: insufficient permissions' });
       }

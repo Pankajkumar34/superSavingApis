@@ -16,7 +16,7 @@ const brandSchema = new mongoose.Schema(
     },
 
     logo: {
-      type: String // image URL (S3 / Cloudinary)
+      type: String // image URL (S3 / Cloudinary)      
     },
 
     description: {
@@ -40,7 +40,7 @@ const brandSchema = new mongoose.Schema(
 
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Admin"
+      ref: "user"
     }
   },
   {

@@ -5,6 +5,7 @@ exports.verifyToken = async (req, res, next) => {
   try {
     const authHeader = req.cookies.accessToken;
 
+
     if (!authHeader) {
       return res.status(401).json({ message: "Access denied. No token provided." });
     }

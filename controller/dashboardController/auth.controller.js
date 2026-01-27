@@ -7,7 +7,7 @@ module.exports = {
     dashboardlogin: async (req, res) => {
         try {
             const { email, password } = req.body;
-
+            console.log(req.body, "==>")
             const user = await models.userModel.findOne({ email }).select("+password");
 
             if (!user) {
@@ -51,9 +51,58 @@ module.exports = {
                 sameSite: "strict",
                 maxAge: 7 * 24 * 60 * 60 * 1000
             });
-            return successResponse(res, "OTP verified successfully", { accessToken, refreshToken, user });
+
+            const userData = {
+                user,
+                accessToken,
+                refreshToken
+            };
+
+            return successResponse(res, "OTP verified successfully", userData);
         } catch (error) {
             return errorResponse(res, "Server error", 500, error);
         }
     },
+
+    me: async (req, res) => {
+        try {
+            const user = req.user
+            const authHeader = req.cookies.accessToken;
+
+            if (!authHeader) {
+                return res.status(401).json({ message: "Access denied. No token provided." });
+            }
+
+            const userDetails = await models.userModel.findById(user.userId).select("-password")
+            return successResponse(res, "Logged successfully", userDetails);
+
+        } catch (error) {
+            return errorResponse(res, "Server error", 500, error);
+        }
+    },
+    logOut: async (req, res) => {
+        try {
+            res.clearCookie("accessToken", {
+                httpOnly: true,
+                secure: false,
+                sameSite: "lax",
+                path: "/"
+            });
+             res.clearCookie("refreshToken", {
+                httpOnly: true,
+                secure: false,
+                sameSite: "lax",
+                path: "/"
+            });
+
+            return res.status(200).json({
+                message: "Logout successful"
+            });
+
+        } catch (error) {
+            return errorResponse(res, "Server error", 500, error);
+        }
+    }
+
+
 }

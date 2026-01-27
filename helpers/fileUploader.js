@@ -1,6 +1,8 @@
 const fs = require("fs")
 const path = require("path")
 
+const busboy = require("busboy")
+
 
 const uploadFileInChunks = (file, destination = "userimg") => {
    
@@ -70,6 +72,57 @@ const DEST_MAP = {
   4: "banners"
 }
 
+
+
+
+
+
+
+
+
+
+const uploaderFile = (req, res) => {
+
+    const allowedImages = ["image/jpeg", "image/png", "image/gif"];
+    const allowedVideos = ["video/mp4", "video/quicktime"]; // mov = quicktime
+     const bb = busboy({ headers: req.headers });
+    console.log(req,"bb")
+// return
+   
+      const savedFiles = [];
+
+    bb.on('file', (name, file, info) => {
+        const { filename, mimeType } = info;
+        let folder = "";
+        if (allowedImages.includes(mimeType)) {
+            folder = "images";
+            publicPath = "images";
+        } else if (allowedVideos.includes(mimeType)) {
+            folder = "videos";
+            publicPath = "videos";
+        } else {
+            file.resume(); // ❌ reject file
+            return;
+        }
+        const uploadDir = path.join(__dirname, `../public/uploads/${folder}`);
+        if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+        const uniqueName = Date.now() + "_" + filename;
+        const saveTo = path.join(uploadDir, uniqueName);
+        const url = `http://localhost:4000/uploads/${folder}/${uniqueName}`;
+
+        file.pipe(fs.createWriteStream(saveTo));
+        savedFiles.push(url);
+    });
+    bb.on('close', () => {
+        res.writeHead(200, { 'Connection': 'close' });
+        res.end(JSON.stringify({ message: "Upload complete", files: savedFiles }));
+    });
+    req.pipe(bb);
+    
+
+
+}
+
 const deleteFile = (req, res) => {
   try {
     const { fileName, destination } = req.query
@@ -109,4 +162,4 @@ const deleteFile = (req, res) => {
 }
 
 
-module.exports = { uploadFile,uploadFileInChunks,deleteFile }
+module.exports = { uploadFile,uploadFileInChunks,deleteFile ,uploaderFile}

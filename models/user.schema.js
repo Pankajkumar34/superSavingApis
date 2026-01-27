@@ -106,6 +106,8 @@ const userSchema = new Schema(
   },
   { timestamps: true }
 );
+userSchema.index({ role: 1, createdAt: 1 });
+
 
 userSchema.index({ location: "2dsphere" });
 

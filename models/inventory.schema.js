@@ -10,16 +10,12 @@ const inventorySchema = new mongoose.Schema(
     variant: {
       type: Map,
       of: mongoose.Schema.Types.Mixed
-      /*
-        grocery  -> { pack: "1kg" }
-        mobile   -> { color: "Black", ram: 8, storage: 128 }
-      */
     },
-
     sku: {
       type: String,
+      required: true,
       unique: true,
-      required: true
+      trim: true,
     },
 
     warehouse: {
@@ -91,5 +87,6 @@ const inventorySchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-
-module.exports= mongoose.model("inventory",inventorySchema)
+inventorySchema.index({ warehouse: 1 });
+inventorySchema.index({ product: 1 });
+module.exports = mongoose.model("inventory", inventorySchema)

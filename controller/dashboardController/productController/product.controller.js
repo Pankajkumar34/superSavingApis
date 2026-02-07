@@ -1,22 +1,50 @@
 
 const { errorResponse, successResponse, failedErrorResponse } = require('../../../helpers/response.helper');
 const models = require('../../../models/index');
+const mongoose = require("mongoose");
 module.exports = {
     addBrand: async (req, res) => {
         try {
-            const { name, logo, description, country, seo, createdBy } = req.body;
-            const slug = name.trim().toLowerCase().replace(/\s+/g, '-');
-
-            const existingBrand = await models.brandModel.findOne({ name: name.trim() });
-            if (existingBrand) {
-                return failedErrorResponse(res, "Brand already exists", 400);
+            const { brands } = req.body;
+            const userId = req.user.userId;
+            if (!Array.isArray(brands) || brands.length === 0) {
+                return failedErrorResponse(res, "Brands array required", 400);
             }
-            const newBrand = new models.brandModel({ name: name.trim(), slug, logo, description, country, seo, createdBy });
-            await newBrand.save();
-            return successResponse(res, "Brand added successfully", newBrand);
+            console.log("Received brands:", brands);
+
+            // 🔹 Create slug + trim name
+            const formattedBrands = brands.map((brand) => ({
+                ...brand,
+                name: brand.name.trim(),
+                slug: brand.slug,
+                addedBy: userId
+            }));
+
+            // 🔹 Find existing brands (avoid duplicates)
+            const names = formattedBrands.map(b => b.name);
+            const existingBrands = await models.brandModel.find({ name: { $in: names } });
+
+            const existingNames = existingBrands.map(b => b.name);
+
+            // 🔹 Filter only new brands
+            const newBrands = formattedBrands.filter(
+                b => !existingNames.includes(b.name)
+            );
+
+            if (newBrands.length === 0) {
+                return failedErrorResponse(res, "All brands already exist", 400);
+            }
+
+            const savedBrands = await models.brandModel.insertMany(newBrands);
+
+            return successResponse(res, "Brands added successfully", {
+                addedCount: savedBrands.length,
+                skippedCount: existingNames.length,
+                addedBrands: savedBrands
+            });
+
         } catch (error) {
             return errorResponse(res, "Server error", 500, error);
-
         }
     },
     updateBrand: async (req, res) => {
@@ -56,6 +84,16 @@ module.exports = {
             return errorResponse(res, "Server error", 500, error);
         }
     },
+    getBrand: async (req, res) => {
+        try {
+            const brand = await models.brandModel.find({ isActive: true }).sort({ createdAt: -1 });
+
+            return successResponse(res, "Brand list fetched", brand);
+        } catch (error) {
+            return errorResponse(res, "Server error", 500, error);
+        }
+
+    },
     deleteBrand: async (req, res) => {
         try {
             const { brandId } = req.params;
@@ -76,36 +114,65 @@ module.exports = {
     /// Category Controllers 
     addCategory: async (req, res) => {
         try {
-            const { name, brandId, type, image } = req.body;
-            const slug = name.trim().toLowerCase().replace(/\s+/g, '-');
-            const existingCategory = await models.categoryModel.findOne({
-                name: name.trim()
-            });
+            const { categories } = req.body;
 
-            if (existingCategory) {
-                return failedErrorResponse(res, "Category already exists", 400);
+            if (!Array.isArray(categories) || categories.length === 0) {
+                return failedErrorResponse(res, "Categories array is required", 400);
             }
 
-            const category = new models.categoryModel({
-                name: name.trim(),
-                slug,
-                brandId,
-                type,
-                image,
-            });
+            /* ================= PREPARE DATA ================= */
+            const names = categories.map(cat => cat.name.trim());
 
-            await category.save();
+            const existingCategories = await models.categoryModel.find({
+                name: { $in: names }
+            }).select("name");
 
-            return successResponse(res, "Category added successfully", category);
+            const existingNames = existingCategories.map(
+                cat => cat.name.toLowerCase()
+            );
+
+            const filteredCategories = categories.filter(
+                cat => !existingNames.includes(cat.name.trim().toLowerCase())
+            );
+
+            if (filteredCategories.length === 0) {
+                return failedErrorResponse(
+                    res,
+                    "All categories already exist",
+                    400
+                );
+            }
+
+            const payload = filteredCategories.map(cat => ({
+                name: cat.name.trim(),
+                slug: cat.name.trim().toLowerCase().replace(/\s+/g, "-"),
+                brandId: cat.brandId,
+                type: cat.type,
+                image: cat.image || "",
+            }));
+
+            /* ================= INSERT ================= */
+            const savedCategories = await models.categoryModel.insertMany(
+                payload,
+                { ordered: false } // ⚡ continue even if one fails
+            );
+
+            return successResponse(
+                res,
+                "Categories added successfully",
+                savedCategories
+            );
+
         } catch (error) {
+            console.error("Add Category Multiple Error:", error);
             return errorResponse(res, "Server error", 500, error);
         }
     },
+
     getCategories: async (req, res) => {
         try {
             const categories = await models.categoryModel
                 .find({ isActive: true })
-                .populate("brand", "name slug")
                 .sort({ createdAt: -1 });
 
             return successResponse(res, "Category list fetched", categories);
@@ -190,37 +257,65 @@ module.exports = {
       ========================= */
     addSubCategory: async (req, res) => {
         try {
-            const { name, categoryId, brandId, image } = req.body;
-            const slug = name.trim().toLowerCase().replace(/\s+/g, '-');
-            const existingSubCategory = await models.subcategoryModel.findOne({
-                name: name.trim(),
-                categoryId: categoryId
-            });
+            const { subCategories } = req.body;
 
-            if (existingSubCategory) {
-                return failedErrorResponse(res, "Subcategory already exists", 400);
+            if (!Array.isArray(subCategories) || subCategories.length === 0) {
+                return failedErrorResponse(
+                    res,
+                    "SubCategories array is required",
+                    400
+                );
             }
 
-            const subCategory = new models.subcategoryModel({
-                name: name.trim(),
-                slug,
-                categoryId: categoryId,
-                brandId: brandId,
-                image,
+            /* ================= CLEAN & PREPARE DATA ================= */
+            const preparedData = subCategories.map((item) => {
+                if (!item.name || !item.categoryId) {
+                    throw new Error("Name and categoryId are required");
+                }
+
+                return {
+                    name: item.name.trim(),
+                    slug: item.name.trim().toLowerCase().replace(/\s+/g, "-"),
+                    categoryId: item.categoryId,
+                    brandId: item.brandId || null,
+                    image: item.image || null,
+                    isActive:
+                        typeof item.isActive === "boolean"
+                            ? item.isActive
+                            : true,
+                };
             });
 
-            await subCategory.save();
+            /* ================= DUPLICATE CHECK ================= */
+            const existing = await models.subcategoryModel.find({
+                $or: preparedData.map((item) => ({
+                    name: item.name,
+                    categoryId: item.categoryId,
+                })),
+            });
+
+            if (existing.length > 0) {
+                return failedErrorResponse(
+                    res,
+                    "One or more subcategories already exist",
+                    400
+                );
+            }
+
+            /* ================= INSERT ================= */
+            const createdSubCategories =
+                await models.subcategoryModel.insertMany(preparedData);
 
             return successResponse(
                 res,
-                "Subcategory added successfully",
-                subCategory
+                "Subcategories added successfully",
+                createdSubCategories
             );
         } catch (error) {
-            return errorResponse(res, "Server error", 500, error);
+            console.error(error);
+            return errorResponse(res, error.message || "Server error", 500);
         }
     },
-
 
     getSubCategories: async (req, res) => {
         try {
@@ -329,9 +424,116 @@ module.exports = {
         } catch (error) {
             return errorResponse(res, "Server error", 500, error);
         }
+    },
+
+    getCatalogTree: async (req, res) => {
+        try {
+            const brands = await models.brandModel
+                .find({ isActive: true })
+                .select("_id name");
+
+            const categories = await models.categoryModel
+                .find({ isActive: true })
+                .select("_id name brandId");
+
+            const subCategories = await models.subcategoryModel
+                .find({ isActive: true })
+                .select("_id name categoryId");
+
+            const tree = brands.map((brand) => ({
+                ...brand.toObject(),
+                categories: categories
+                    .filter(
+                        (cat) => cat.brandId?.toString() === brand._id.toString()
+                    )
+                    .map((cat) => ({
+                        ...cat.toObject(),
+                        subCategories: subCategories.filter(
+                            (sub) =>
+                                sub.categoryId?.toString() ===
+                                cat._id.toString()
+                        ),
+                    })),
+            }));
+
+            return successResponse(res, "Catalog tree fetched", tree);
+
+        } catch (error) {
+            return errorResponse(res, "Server error", 500, error);
+        }
+
+    },
+
+    // product add 
+
+    createProduct: async (req, res) => {
+        const session = await mongoose.startSession();
+        session.startTransaction();
+
+        try {
+            const { product, skus, inventory } = req.body;
+
+            /* ================= PRODUCT ================= */
+            const slug = product.name
+                .trim()
+                .toLowerCase()
+                .replace(/\s+/g, "-");
+
+            const createdProduct = await models.productModel.create(
+                [{ ...product, slug }],
+                { session }
+            );
+
+            const productId = createdProduct[0]._id;
+
+            /* ================= SKUS ================= */
+            const skuDocs = skus.map((sku) => ({
+                ...sku,
+                product: productId,
+            }));
+
+            const createdSkus = await models.skuModel.insertMany(skuDocs, { session });
+
+            const skuMap = {};
+            createdSkus.forEach((s) => {
+                skuMap[s.sku] = s._id;
+            });
+
+            /* ================= INVENTORY ================= */
+            const inventoryDocs = inventory.map((inv) => ({
+                product: productId,
+                sku: skuMap[inv.sku],
+                warehouse: inv.warehouse,
+                quantity: inv.quantity,
+                costPrice: inv.costPrice,
+                batchNumber: inv.batchNumber,
+                expiryDate: inv.expiryDate,
+                status: inv.quantity > 0 ? "active" : "out_of_stock",
+            }));
+
+            await models.inventoryModel.insertMany(inventoryDocs, { session });
+
+            await session.commitTransaction();
+            session.endSession();
+
+            return res.status(201).json({
+                success: true,
+                message: "Product created successfully",
+                productId,
+            });
+
+        } catch (error) {
+            await session.abortTransaction();
+            session.endSession();
+
+            console.error(error);
+            return res.status(500).json({
+                success: false,
+                message: "Product creation failed",
+                error: error.message,
+            });
+        }
     }
-
-
 
 
 }

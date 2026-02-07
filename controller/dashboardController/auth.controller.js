@@ -31,7 +31,7 @@ module.exports = {
                     warehouseId: user.warehouseId
                 },
                 process.env.JWT_SECRET,
-                { expiresIn: "15m" }
+                { expiresIn: "7d" }
             );
 
             const refreshToken = jwt.sign(
@@ -43,7 +43,8 @@ module.exports = {
                 httpOnly: true,
                 secure: true,          // HTTPS only
                 sameSite: "strict",    // prevent CSRF
-                maxAge: 15 * 60 * 1000 // 15 min
+                // maxAge: 15 * 60 * 1000 // 15 min
+                maxAge: 7 * 24 * 60 * 60 * 1000
             });
             res.cookie("refreshToken", refreshToken, {
                 httpOnly: true,

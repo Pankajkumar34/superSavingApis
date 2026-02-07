@@ -51,18 +51,35 @@ const productSchema = new mongoose.Schema(
       ref: "SubCategory"
     },
 
-  
+
     images: [productImageSchema],
-
-
-    price: {
-      mrp: Number,
-      sellingPrice: Number
+    description: {
+      type: String,
+      trim: true
     },
-
-    stock: {
+    isFeatured: {
+      type: Boolean,
+      default: false
+    },
+    isTrending: {
+      type: Boolean,
+      default: false
+    },
+    rating: {
       type: Number,
+      min: 0,
+      max: 5,
       default: 0
+    },
+    reviewsCount: {
+      type: Number,
+      min: 0,
+      max: 10000,
+      default: 0
+    },
+    totalSold: {
+      type: Number,
+      default: 0,
     },
 
     isActive: {
@@ -74,4 +91,4 @@ const productSchema = new mongoose.Schema(
 );
 
 
-module.exports = mongoose.model("product",productSchema)
+module.exports = mongoose.model("product", productSchema)

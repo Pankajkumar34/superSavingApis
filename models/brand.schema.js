@@ -1,4 +1,4 @@
-const mongoose =require("mongoose")
+const mongoose = require("mongoose")
 
 const brandSchema = new mongoose.Schema(
   {
@@ -38,10 +38,12 @@ const brandSchema = new mongoose.Schema(
       keywords: [String]
     },
 
-    createdBy: {
+    addedBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "user"
+      ref: "User",
+      required: true
     }
+
   },
   {
     timestamps: true
@@ -49,4 +51,4 @@ const brandSchema = new mongoose.Schema(
 );
 
 
-module.exports= mongoose.model("brand",brandSchema)
+module.exports = mongoose.model("brand", brandSchema)

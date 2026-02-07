@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 
 
 const permissions = new mongoose.Schema({
-  name: {
+  role: {
     type: String,
     enum: [
       "SUPER_ADMIN",
@@ -12,10 +12,14 @@ const permissions = new mongoose.Schema({
       "STAFF"
     ],
     required: true,
-    unique: true
   },
 
- permissions: {
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User"
+  },
+
+  permissions: {
     users: {
       read: { type: Boolean, default: false },
       create: { type: Boolean, default: false },

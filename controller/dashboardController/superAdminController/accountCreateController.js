@@ -270,13 +270,12 @@ module.exports = {
   },
   getAccountDataById: async (req, res) => {
     try {
-      const userid = req.query.id
-      console.log(userid)
+      const { id, role } = req.query
       const accountData = await models.userModel.aggregate(
         [
           {
             $match: {
-              _id: new mongoose.Types.ObjectId(userid)
+              _id: new mongoose.Types.ObjectId(id),
             }
           },
           {
@@ -284,27 +283,159 @@ module.exports = {
               from: "franchises",
               localField: "_id",
               foreignField: "owner",
-              as: "data"
+              as: "franchiseData"
             }
           },
+
+          {
+            $lookup: {
+              from: "warehouse",
+              localField: "_id",
+              foreignField: "manager",
+              as: "warehouseData"
+            }
+          },
+
+          {
+            $addFields: {
+              data: {
+                $cond: {
+                  if: { $eq: ["$role", "FRANCHISE_ADMIN"] },
+                  then: "$franchiseData",
+                  else: "$warehouseData"
+                }
+              }
+            }
+          },
+
           {
             $unwind: {
               path: "$data",
               preserveNullAndEmptyArrays: true
             }
           },
+
           {
             $project: {
-              "password": 0,
-              "isOtpVerified": 0,
-              "refreshTokens": 0,
-              "isProfileCompleted": 0
+              password: 0,
+              isOtpVerified: 0,
+              refreshTokens: 0,
+              isProfileCompleted: 0,
+              franchiseData: 0,
+              warehouseData: 0
             }
           }
         ]
       )
 
-      return res.status(200).json({status:true,accountData})
+      return res.status(200).json({ status: true, accountData })
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: "Server error"
+      });
+    }
+  },
+
+  getUserList: async (req, res) => {
+    try {
+      const { role } = req.query
+      console.log(role,)
+      const userList = await models.userModel.aggregate([
+        {
+          $match: { role: role }
+        },
+        {
+          $lookup: {
+            from: "franchises",
+            localField: "_id",
+            foreignField: "owner",
+            as: "franchises"
+          }
+        },
+        {
+          $lookup: {
+            from: "warehouse",
+            localField: "_id",
+            foreignField: "manager",
+            as: "warehouse"
+          }
+        },
+        {
+          $addFields: {
+            name: {
+              $concat: ["$firstName", " ", "$lastName"]
+            }
+          }
+        },
+        {
+          $project: {
+            refreshTokens: 0,
+            walletId: 0
+          }
+        }
+      ]);
+      return res.status(200).json({ status: true, userList })
+
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: "Server error"
+      });
+    }
+  },
+  permissionCreateAndUpdate: async (req, res) => {
+    try {
+      const { userId, role, permissions } = req.body;
+
+      if (!userId || !role) {
+        return res.status(400).json({
+          success: false,
+          message: "userId and role are required"
+        });
+      }
+
+      const permissionDoc = await models.permissions.findOneAndUpdate(
+        { userId },
+        {
+          role,
+          permissions
+        },
+        {
+          new: true,
+          upsert: true,
+          runValidators: true
+        }
+      );
+
+      return res.status(200).json({
+        success: true,
+        message: "Permissions saved successfully",
+        data: permissionDoc
+      });
+
+    } catch (error) {
+      console.error(error,"=====");
+
+      if (error.code === 11000) {
+        return res.status(409).json({
+          success: false,
+          message: "Permissions already exist for this user"
+        });
+      }
+
+      return res.status(500).json({
+        success: false,
+        message: "Internal server error"
+      });
+    }
+  },
+  getPermission: async (req, res) => {
+    try {
+      const { id } = req.query
+      const permissionData = await models.permissions.findOne({ userId:new  mongoose.Types.ObjectId(id) })
+      return res.status(200).json({ status: true, permissionData })
+
     } catch (error) {
       return res.status(500).json({
         success: false,
@@ -312,160 +443,5 @@ module.exports = {
       });
     }
   }
-
-  //    getUserStats: async (req, res) => {
-  //   try {
-  //     const now = new Date();
-
-  //     const startOfDay = new Date(now.setHours(0, 0, 0, 0));
-
-  //     const startOfWeek = new Date();
-  //     startOfWeek.setDate(startOfWeek.getDate() - 7);
-
-  //     const startOfMonth = new Date();
-  //     startOfMonth.setMonth(startOfMonth.getMonth() - 1);
-
-  //     /* ================= ROLE COUNTS ================= */
-
-  //     const roleStats = await models.userModel.aggregate([
-  //       {
-  //         $group: {
-  //           _id: "$role",
-  //           count: { $sum: 1 }
-  //         }
-  //       }
-  //     ]);
-
-  //     const roleCounts = {
-  //       USER: 0,
-  //       SUPER_ADMIN: 0,
-  //       FRANCHISE_ADMIN: 0,
-  //       WAREHOUSE_ADMIN: 0
-  //     };
-
-  //     roleStats.forEach(r => {
-  //       roleCounts[r._id] = r.count;
-  //     });
-
-  //     const totalUsers = Object.values(roleCounts).reduce((a, b) => a + b, 0);
-
-  //     /* ================= USER GROWTH (ALL USERS) ================= */
-
-  //     const [userToday, userWeek, userMonth] = await Promise.all([
-  //       models.userModel.countDocuments({ createdAt: { $gte: startOfDay } }),
-  //       models.userModel.countDocuments({ createdAt: { $gte: startOfWeek } }),
-  //       models.userModel.countDocuments({ createdAt: { $gte: startOfMonth } })
-  //     ]);
-
-  //     const [prevUserDay, prevUserWeek, prevUserMonth] = await Promise.all([
-  //       models.userModel.countDocuments({
-  //         createdAt: {
-  //           $gte: new Date(startOfDay.getTime() - 24 * 60 * 60 * 1000),
-  //           $lt: startOfDay
-  //         }
-  //       }),
-  //       models.userModel.countDocuments({
-  //         createdAt: {
-  //           $gte: new Date(startOfWeek.getTime() - 7 * 24 * 60 * 60 * 1000),
-  //           $lt: startOfWeek
-  //         }
-  //       }),
-  //       models.userModel.countDocuments({
-  //         createdAt: {
-  //           $gte: new Date(startOfMonth.getTime() - 30 * 24 * 60 * 60 * 1000),
-  //           $lt: startOfMonth
-  //         }
-  //       })
-  //     ]);
-
-  //     /* ================= FRANCHISE GROWTH ================= */
-
-  //     const [frToday, frWeek, frMonth] = await Promise.all([
-  //       models.userModel.countDocuments({
-  //         role: "FRANCHISE_ADMIN",
-  //         createdAt: { $gte: startOfDay }
-  //       }),
-  //       models.userModel.countDocuments({
-  //         role: "FRANCHISE_ADMIN",
-  //         createdAt: { $gte: startOfWeek }
-  //       }),
-  //       models.userModel.countDocuments({
-  //         role: "FRANCHISE_ADMIN",
-  //         createdAt: { $gte: startOfMonth }
-  //       })
-  //     ]);
-
-  //     const [prevFrDay, prevFrWeek, prevFrMonth] = await Promise.all([
-  //       models.userModel.countDocuments({
-  //         role: "FRANCHISE_ADMIN",
-  //         createdAt: {
-  //           $gte: new Date(startOfDay.getTime() - 24 * 60 * 60 * 1000),
-  //           $lt: startOfDay
-  //         }
-  //       }),
-  //       models.userModel.countDocuments({
-  //         role: "FRANCHISE_ADMIN",
-  //         createdAt: {
-  //           $gte: new Date(startOfWeek.getTime() - 7 * 24 * 60 * 60 * 1000),
-  //           $lt: startOfWeek
-  //         }
-  //       }),
-  //       models.userModel.countDocuments({
-  //         role: "FRANCHISE_ADMIN",
-  //         createdAt: {
-  //           $gte: new Date(startOfMonth.getTime() - 30 * 24 * 60 * 60 * 1000),
-  //           $lt: startOfMonth
-  //         }
-  //       })
-  //     ]);
-
-  //     return res.status(200).json({
-  //       success: true,
-  //       data: {
-  //         totalUsers,
-  //         roleCounts,
-
-  //         growth: {
-  //           users: {
-  //             today: {
-  //               count: userToday,
-  //               percentage: calcPercent(userToday, prevUserDay)
-  //             },
-  //             week: {
-  //               count: userWeek,
-  //               percentage: calcPercent(userWeek, prevUserWeek)
-  //             },
-  //             month: {
-  //               count: userMonth,
-  //               percentage: calcPercent(userMonth, prevUserMonth)
-  //             }
-  //           },
-
-  //           franchise: {
-  //             today: {
-  //               count: frToday,
-  //               percentage: calcPercent(frToday, prevFrDay)
-  //             },
-  //             week: {
-  //               count: frWeek,
-  //               percentage: calcPercent(frWeek, prevFrWeek)
-  //             },
-  //             month: {
-  //               count: frMonth,
-  //               percentage: calcPercent(frMonth, prevFrMonth)
-  //             }
-  //           }
-  //         }
-  //       }
-  //     });
-
-  //   } catch (error) {
-  //     console.error(error);
-  //     return res.status(500).json({
-  //       success: false,
-  //       message: "Server error"
-  //     });
-  //   }
-  // }
 
 }

@@ -16,7 +16,7 @@ const { deleteFile } = require("./helpers/fileUploader")
 //   limits: { fileSize: 50 * 1024 * 1024 },
 // }));
 app.use(cors({
-  origin: ["http://localhost:3000", "http://localhost:5173"],
+  origin: ["http://localhost:3000", "http://localhost:5173","http://localhost:4000"],
   credentials: true,
 }));
 app.use(
@@ -79,7 +79,7 @@ const uploadDir = path.join(__dirname, "./public/upload",folder)
       fieldname,
       fileName: safeFilename,
       path: savedPath,
-      url: `http://localhost:4000/upload/${folder}/${safeFilename}`
+      url: `https://supersavingapis.onrender.com/uploads/${folder}/${safeFilename}`
     })
   })
 
@@ -97,6 +97,7 @@ const uploadDir = path.join(__dirname, "./public/upload",folder)
 
   req.pipe(busboy)
 })
+
 app.delete("/api/file/delete", deleteFile)
 
 app.use(express.json());
@@ -109,6 +110,15 @@ app.use('/api/franchise', require('./routes/dashboardRoutes/franchise.routes'));
 app.use('/api/sub-admin', require('./routes/dashboardRoutes/subAdmin.routes'));
 app.use('/api/warehouse', require('./routes/dashboardRoutes/warehouse.routes'));
 
+
+// build render
+app.use(
+  "/assets",
+  express.static(path.join(__dirname, "dist/assets"))
+);
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "dist", "index.html"));
+});
 app.use((req, res) => {
   try {
     return res.status(404).json({ message: 'Not Found' });

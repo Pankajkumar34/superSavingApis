@@ -108,7 +108,9 @@ const uploaderFile = (req, res) => {
         if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
         const uniqueName = Date.now() + "_" + filename;
         const saveTo = path.join(uploadDir, uniqueName);
-        const url = `http://localhost:4000/uploads/${folder}/${uniqueName}`;
+        // const url = `http://localhost:4000/uploads/${folder}/${uniqueName}`;
+                const url = `https://supersavingapis.onrender.com/uploads/${folder}/${uniqueName}`;
+
 
         file.pipe(fs.createWriteStream(saveTo));
         savedFiles.push(url);

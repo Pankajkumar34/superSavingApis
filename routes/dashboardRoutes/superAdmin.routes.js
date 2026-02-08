@@ -21,4 +21,5 @@ router.get("/get-category-list",verifyToken, verifyRole(["SUPER_ADMIN"]),product
 router.post("/add-sub-category",verifyToken, verifyRole(["SUPER_ADMIN"]),productController.addSubCategory)
 router.get("/catalog-tree",verifyToken, verifyRole(["SUPER_ADMIN"]),productController.getCatalogTree)
 router.post("/create-product",verifyToken, verifyRole(["SUPER_ADMIN"]),productController.createProduct)
+router.get("/get-product-list",verifyToken, verifyRole(["SUPER_ADMIN"]),productController.getProducts)
 module.exports = router;

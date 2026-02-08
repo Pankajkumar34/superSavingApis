@@ -13,7 +13,7 @@ module.exports = {
   accountCreate: async (req, res) => {
     try {
       const {
-        firstName, countryCode, lastName, email, password, role, phoneNumber, branchName, name,
+        firstName, countryCode,profileImage, lastName, email, password, role, phoneNumber, branchName, name,
         aadhaarNumber, aadhaarFront, aadhaarBack, panNumber, panImage, passportPhoto, accountHolderName, bankAccountNumber, ifscCode, bankName
 
       } = req.body;
@@ -29,7 +29,7 @@ module.exports = {
         email,
         password: hashedPassword,
         countryCode: countryCode,
-        profileImage: "",
+        profileImage: profileImage,
         phoneNumber: phoneNumber,
         accountNumber: accountNumber,
         role
@@ -289,7 +289,7 @@ module.exports = {
 
           {
             $lookup: {
-              from: "warehouse",
+              from: "warehouses",
               localField: "_id",
               foreignField: "manager",
               as: "warehouseData"

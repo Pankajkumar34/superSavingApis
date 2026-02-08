@@ -533,7 +533,103 @@ module.exports = {
                 error: error.message,
             });
         }
+    },
+    getProducts: async (req, res) => {
+        try {
+            const products = await models.productModel.aggregate([
+                {
+                    $lookup: {
+                        from: "brands",
+                        localField: "brand",
+                        foreignField: "_id",
+                        as: "brand"
+                    }
+                },
+                { $unwind: { path: "$brand", preserveNullAndEmptyArrays: true } },
+
+                {
+                    $lookup: {
+                        from: "categories",
+                        localField: "category",
+                        foreignField: "_id",
+                        as: "category"
+                    }
+                },
+                { $unwind: { path: "$category", preserveNullAndEmptyArrays: true } },
+
+                {
+                    $lookup: {
+                        from: "subcategories",
+                        localField: "category._id",
+                        foreignField: "categoryId",
+                        as: "subCategory"
+                    }
+                },
+                { $unwind: { path: "$subCategory", preserveNullAndEmptyArrays: true } },
+
+                {
+                    $lookup: {
+                        from: "skus",
+                        localField: "_id",
+                        foreignField: "product",
+                        as: "skus"
+                    }
+                },
+
+                {
+                    $project: {
+                        name: 1,
+                        slug: 1,
+                        images: 1,
+                        isActive: 1,
+                        createdAt: 1,
+
+                        brand: {
+                            _id: 1,
+                            name: 1
+                        },
+
+                        category: {
+                            _id: 1,
+                            name: 1
+                        },
+
+                        subCategory: {
+                            _id: 1,
+                            name: 1
+                        },
+
+                        skus: {
+                            _id: 1,
+                            sku: 1,
+                            mrp: 1,
+                            sellingPrice: 1,
+                            isActive: 1
+                        },
+
+
+                        totalStock: 1
+                    }
+                },
+
+                { $sort: { createdAt: -1 } }
+            ]);
+
+            return res.status(200).json({
+                success: true,
+                data: products
+            });
+
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({
+                success: false,
+                message: "Failed to fetch products",
+                error: error.message
+            });
+        }
     }
+
 
 
 }

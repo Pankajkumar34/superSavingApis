@@ -42,14 +42,14 @@ module.exports = {
             res.cookie("accessToken", accessToken, {
                 httpOnly: true,
                 secure: true,          // HTTPS only
-                sameSite: "strict",    // prevent CSRF
+                sameSite: "none",    // prevent CSRF
                 // maxAge: 15 * 60 * 1000 // 15 min
                 maxAge: 7 * 24 * 60 * 60 * 1000
             });
             res.cookie("refreshToken", refreshToken, {
                 httpOnly: true,
                 secure: true,
-                sameSite: "strict",
+                sameSite: "none",
                 maxAge: 7 * 24 * 60 * 60 * 1000
             });
 
@@ -85,14 +85,14 @@ module.exports = {
         try {
             res.clearCookie("accessToken", {
                 httpOnly: true,
-                secure: false,
-                sameSite: "lax",
+                secure: true,
+                sameSite: "none",
                 path: "/"
             });
              res.clearCookie("refreshToken", {
                 httpOnly: true,
-                secure: false,
-                sameSite: "lax",
+                secure: true,
+                 sameSite: "none",
                 path: "/"
             });
 

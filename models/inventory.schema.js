@@ -20,7 +20,7 @@ const inventorySchema = new mongoose.Schema(
 
     warehouse: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Warehouse"
+      ref: "Warehouse",required: true
     },
 
     quantity: {

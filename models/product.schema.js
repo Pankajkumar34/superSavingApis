@@ -90,5 +90,48 @@ const productSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+productSchema.index({ slug: 1 }, { unique: true });
+
+// 2️⃣ Name search (prefix search support)
+productSchema.index({ name: 1 });
+
+// 3️⃣ Category listing (Most Important Index)
+productSchema.index({
+  category: 1,
+  isActive: 1,
+  createdAt: -1
+});
+
+// 4️⃣ Brand filter
+productSchema.index({
+  brand: 1,
+  isActive: 1
+});
+
+// 5️⃣ Featured products (Homepage)
+productSchema.index({
+  isFeatured: 1,
+  isActive: 1,
+  createdAt: -1
+});
+
+// 6️⃣ Trending products
+productSchema.index({
+  isTrending: 1,
+  isActive: 1,
+  createdAt: -1
+});
+
+// 7️⃣ Rating sorting
+productSchema.index({ rating: -1 });
+
+// 8️⃣ Popular products
+productSchema.index({ totalSold: -1 });
+
+// Optional: Unique product per brand + category (better than name+category only)
+productSchema.index(
+  { name: 1, brand: 1, category: 1 },
+  { unique: true }
+);
 
 module.exports = mongoose.model("product", productSchema)

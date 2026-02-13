@@ -16,7 +16,7 @@ const { deleteFile } = require("./helpers/fileUploader")
 //   limits: { fileSize: 50 * 1024 * 1024 },
 // }));
 app.use(cors({
-  origin: ["http://localhost:3000", "http://localhost:5173","http://localhost:4000","https://supersavingapis.onrender.com"],
+  origin: ["http://localhost:3000", "http://localhost:5173","http://localhost:4000","https://supersavingapis.onrender.com","https://supersavingmarket.vercel.app"],
   credentials: true,
 }));
 app.use(

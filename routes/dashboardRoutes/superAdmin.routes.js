@@ -6,7 +6,7 @@ const productController = require("../../controller/dashboardController/productC
 // role 4 = subAdmin
 // router.get('/', verifyToken, verifyRole([4]));
 router.post('/create-account', verifyToken, verifyRole(["SUPER_ADMIN"]), superAdminController.accountCreate);
-router.get("/stats",verifyToken, verifyRole(["SUPER_ADMIN"]),superAdminController.getUserStats)
+router.get("/stats",verifyToken, superAdminController.getUserStats)
 router.get("/get-account-details",verifyToken, verifyRole(["SUPER_ADMIN"]),superAdminController.getAccountDataById)
 router.get("/get-user-list",verifyToken, verifyRole(["SUPER_ADMIN"]),superAdminController.getUserList)
 router.post("/allow-permission",verifyToken, verifyRole(["SUPER_ADMIN"]),superAdminController.permissionCreateAndUpdate)
@@ -14,12 +14,14 @@ router.get("/get-permission",verifyToken, verifyRole(["SUPER_ADMIN"]),superAdmin
 
 
 // product
-router.post("/add-brand",verifyToken, verifyRole(["SUPER_ADMIN"]),productController.addBrand)
-router.get("/get-brand-list",verifyToken, verifyRole(["SUPER_ADMIN"]),productController.getBrand)
-router.post("/add-category",verifyToken, verifyRole(["SUPER_ADMIN"]),productController.addCategory)
-router.get("/get-category-list",verifyToken, verifyRole(["SUPER_ADMIN"]),productController.getCategories)
-router.post("/add-sub-category",verifyToken, verifyRole(["SUPER_ADMIN"]),productController.addSubCategory)
-router.get("/catalog-tree",verifyToken, verifyRole(["SUPER_ADMIN"]),productController.getCatalogTree)
-router.post("/create-product",verifyToken, verifyRole(["SUPER_ADMIN"]),productController.createProduct)
-router.get("/get-product-list",verifyToken, verifyRole(["SUPER_ADMIN"]),productController.getProducts)
+router.post("/add-brand",verifyToken, productController.addBrand)
+router.get("/get-brand-list",verifyToken,productController.getBrand)
+router.post("/add-category",verifyToken,productController.addCategory)
+router.get("/get-category-list",verifyToken,productController.getCategories)
+router.post("/add-sub-category",verifyToken,productController.addSubCategory)
+router.get("/catalog-tree",verifyToken,productController.getCatalogTree)
+router.post("/create-product",verifyToken,productController.createProduct)
+router.get("/get-product-list",verifyToken,productController.getProducts)
+router.post("/add-brand",verifyToken, productController.addBrand)
+router.post("/transfer-stock",verifyToken, productController.transferStockToFranchise)
 module.exports = router;

@@ -22,6 +22,11 @@ const userSchema = new Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Wallet"
     },
+     franchiseId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",     
+      default: null,   
+    },
     firstName: { type: String, default: "" },
     lastName: { type: String, default: "" },
     email: {

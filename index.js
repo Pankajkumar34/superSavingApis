@@ -103,13 +103,8 @@ app.delete("/api/file/delete", deleteFile)
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use('/api/auth', require('./routes/auth.routes'));
-app.use('/api/dashboard', require('./routes/dashboardRoutes/dashboardAuth.routes'));
-app.use('/api/super-admin', require('./routes/dashboardRoutes/superAdmin.routes'));
-app.use('/api/franchise', require('./routes/dashboardRoutes/franchise.routes'));
-app.use('/api/sub-admin', require('./routes/dashboardRoutes/subAdmin.routes'));
-app.use('/api/warehouse', require('./routes/dashboardRoutes/warehouse.routes'));
 
+app.use(require('./routes/mainRoutes'));
 
 // build render
 app.use(

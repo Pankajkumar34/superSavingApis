@@ -13,10 +13,15 @@ const inventorySchema = new mongoose.Schema(
     },
     sku: {
       type: String,
-      required: true,
-      unique: true,
+      // required: true,
       trim: true,
     },
+      skuId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Sku",
+      required: true
+    },
+
 
     warehouse: {
       type: mongoose.Schema.Types.ObjectId,

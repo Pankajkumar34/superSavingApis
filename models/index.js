@@ -13,4 +13,6 @@ module.exports = {
     subcategoryModel: require("./subcategory.schema"),
     skuModel: require("./sku.schema"),
     inventoryModel: require("./inventory.schema"),
+    franchiseStockTransferModel: require("./franchiseStockTransfer.schema"),
+    barcodeModel: require("./barcode.schema"),
 }

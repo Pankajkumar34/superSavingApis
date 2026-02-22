@@ -1,8 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const { verifyToken, verifyRole } = require('../../middlewares/auth.middleware');
-
-// role 3 = frenchies
-router.get('/', verifyToken, verifyRole(["FRANCHISE_ADMIN"]));
-
+const franchiseController = require('../../controller/dashboardController/franchiseController/franchiseController');
+router.post('/customer/create', verifyToken, franchiseController.customerCreate);
 module.exports = router;

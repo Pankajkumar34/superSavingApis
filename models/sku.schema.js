@@ -31,7 +31,7 @@ const skuSchema = new mongoose.Schema(
 
     /* ================= VARIANTS ================= */
     attributes: {
-      // Grocery
+      quantity: { type: Number },
       weight: { type: Number },
       unit: {
         type: String,
